@@ -6,6 +6,7 @@ from flask import request
 from flask import redirect
 from linky.utils.jsonify import jsonify
 from linky.utils.shortener import Shortener
+from linky.utils.shortener import InvalidUrlError
 from linky.utils.datastore import MemoryDataStore
 
 app = Flask(__name__)
@@ -16,7 +17,10 @@ shortener = Shortener(MemoryDataStore())
 @jsonify
 def create():
     url = request.values.get('url')
-    return {'url': request.url_root + shortener.shorten(url)}
+    try:
+        return {'url': request.url_root + shortener.shorten(url)}
+    except InvalidUrlError:
+        return {'errors': {'url': 'is invalid'}}, 400
 
 
 @app.route('/<key>.json')
