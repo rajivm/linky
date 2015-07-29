@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals, print_function
 
 from flask import Flask
+from flask import Response
 from flask import request
 from flask import redirect
 from linky.utils.jsonify import jsonify
@@ -13,14 +14,19 @@ app = Flask(__name__)
 shortener = Shortener(MemoryDataStore())
 
 
+@app.route('/', methods=['GET'])
+def index():
+    return app.send_static_file('index.html')
+
+
 @app.route('/create.json', methods=['POST'])
 @jsonify
 def create():
     url = request.values.get('url')
     try:
-        return {'url': request.url_root + shortener.shorten(url)}
+        return Response({'short_url': request.url_root + shortener.shorten(url)})
     except InvalidUrlError:
-        return {'errors': {'url': 'is invalid'}}, 400
+        return Response({'errors': {'url': 'is invalid'}}, status=400)
 
 
 @app.route('/<key>.json')
@@ -28,8 +34,8 @@ def create():
 def access_json(key):
     url = shortener.lookup(key)
     if url is None:
-        return {"error": "link not found"}, 404
-    return {"url": url}
+        return Response({"error": "link not found"}, status=404)
+    return Response({"url": url})
 
 
 @app.route('/<key>')
